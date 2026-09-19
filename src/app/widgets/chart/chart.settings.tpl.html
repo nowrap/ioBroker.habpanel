@@ -257,6 +257,27 @@
                                 </div>
                             </div>
 
+                            <div class="col-lg-12 col-md-12">
+                                <div class="form-group">
+                                    <label class="control-label col-lg-3 col-md-3" translate-keep-content translate="widget.chart.series.consolidation">Consolidation</label>
+                                    <div class="col-lg-9 col-md-9">
+                                        <select ng-model="series.consolidation" class="form-control">
+                                            <option value="raw">Raw values</option>
+                                            <option value="average">Average</option>
+                                            <option value="min">Minimum</option>
+                                            <option value="max">Maximum</option>
+                                        </select>
+                                        <span class="help-block">
+                                            Raw keeps every logged value and is right for short periods. Over long
+                                            periods a dense datapoint exceeds what can be fetched and the curve is
+                                            cut off. Consolidation lets the database reduce the window instead, so
+                                            it always stays complete: Maximum suits a rising meter reading, Average
+                                            a sensor trace. Numeric datapoints only.
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
                     </uib-accordion>

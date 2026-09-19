@@ -131,16 +131,24 @@
             return deferred.promise;
         }
 
-        // Upper bound of values a single chart series may request from the history
-        // adapter - high enough to never cut a real series, low enough to stay sane.
+        // Upper bound of RAW values a single chart series may request. Without a count the
+        // history adapters fall back to their own default - 500 for influxdb, the configured
+        // limit for history - and return the OLDEST n values of the window, so the series is
+        // silently cut and drawn as a flat line to the right edge. A fixed bound cannot fit
+        // every datapoint, which is what the consolidation option below is for.
         var maxHistoryValues = 100000;
-        var historyTimeout = 30000;
+        // Number of intervals a consolidated series asks for when the caller names none.
+        var defaultBuckets = 600;
+        // conn.js defaults to 2s, far too short once a large result set really comes back.
+        var historyTimeout = 60000;
 
-        function getTimeSeries(service, item, start, end) {
+        function getTimeSeries(service, item, start, end, request) {
             var deferred = $q.defer();
+            request = request || {};
+            var consolidation = request.consolidation || 'raw';
+            var raw = consolidation === 'raw';
 
-            connect().then(function () {
-                servConn.getHistory(item, { //it seems that this function always goes to history.0 or to default history instance defined in system
+            var options = { //it seems that this function always goes to history.0 or to default history instance defined in system
                     id:       item, // probably not necessary to put it here again
                     start:    start,
                     end:      end,
@@ -153,14 +161,32 @@
                     count:    maxHistoryValues,
                     // conn.js defaults to a 2s timeout, too short for long periods
                     timeout:  historyTimeout
-                }, function (err, dataIOB) { // values from IOB have val and ts instead of state and time
+            };
+
+            if (!raw) {
+                // Consolidated: the backend buckets the window and here 'count' means number
+                // of intervals, not number of values - so the size of the answer no longer
+                // depends on how often the datapoint happens to log.
+                options.aggregate = consolidation;
+                options.count = request.buckets || defaultBuckets;
+                // The adapter widens the window by one step before aggregating, so without
+                // this beautify() appends a value at the now-future end: a fabricated flat
+                // tail one whole bucket wide.
+                options.removeBorderValues = true;
+            }
+
+            connect().then(function () {
+                servConn.getHistory(item, options, function (err, dataIOB) { // values from IOB have val and ts instead of state and time
                     if (err || !dataIOB) {
                         console.error('getHistory failed for ' + item + ': ' + err);
-                        deferred.resolve({data: {name: item, data: []}});
+                        deferred.resolve({data: {name: item, data: [], error: err || 'no data'}});
                         return;
                     }
                     var  dataOHAB= dataIOB.map(obj =>{ var newArr = {}; newArr['state'] = obj.val; newArr['time'] = obj.ts; return newArr; });
-                    deferred.resolve({data: {name: item, data: dataOHAB}});
+                    // Hitting the cap means the answer MAY be cut - it is not proof, because
+                    // beautify() also removes rows. Never act on it silently, just report it.
+                    var capped = raw && dataIOB.length >= maxHistoryValues;
+                    deferred.resolve({data: {name: item, data: dataOHAB, capped: capped}});
                 });
             });
 

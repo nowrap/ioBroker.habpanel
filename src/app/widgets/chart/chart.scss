@@ -22,3 +22,30 @@
 .chart .axis {
     font-size: 0.72em;
 }
+
+/* A series that failed to load, or may have been cut short, must say so - an empty
+   or silently shortened chart is indistinguishable from a correct one. */
+.chart-interactive {
+    position: relative;
+}
+
+.chart-interactive .chart-notices {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.chart-interactive .chart-notice {
+    padding: 0.1em 0.6em;
+    font-size: 0.72em;
+    line-height: 1.5;
+    color: #f0b849;
+    color: var(--chart-notice, #f0b849);
+    background-color: rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

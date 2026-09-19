@@ -43,6 +43,9 @@
                 } else if (scope.vm.widget.charttype === 'default') {
                     scope.vm.width = sprintf("%d", width - 20);
                     scope.vm.height = sprintf("%d", height - 20);
+                } else if (scope.vm.widget.charttype === 'interactive') {
+                    // Only used to size consolidation requests, never for rendering.
+                    scope.vm.plotWidth = width - 20;
                 }
             });
         }
@@ -113,19 +116,59 @@
             if (!vm.widget.series || !vm.widget.series.length)
                 return;
 
+            // A chart cannot show more than a couple of points per pixel, so a consolidated
+            // request is sized by the plot width. The period is deliberately not used: it says
+            // nothing about how densely a given datapoint logs.
+            var bucketsForWidth = function () {
+                var w = parseInt(vm.plotWidth, 10);
+                // link() runs inside a $timeout and getData() may well be first.
+                if (!w || w < 100) w = 600;
+                return Math.min(2000, w);
+            };
+
+            var consolidationFor = function (series) {
+                var cf = series.consolidation || 'raw';
+                if (cf === 'raw') return 'raw';
+                // The adapters only push the aggregation down into the database for numeric
+                // series. For anything else influxdb silently returns the oldest 'count' raw
+                // rows instead - the very truncation we are avoiding, and with a far smaller
+                // count than the raw path uses.
+                var item = OHService.getItem(series.item);
+                var type = item && item.common && item.common.type;
+                if (type !== 'number') {
+                    console.warn('chart: series ' + series.item + ' has type ' + (type || 'unknown') +
+                        ', using raw values instead of ' + cf);
+                    return 'raw';
+                }
+                return cf;
+            };
+
             var getData = function () {
                 var endDate = new Date().getTime();
+                var buckets = bucketsForWidth();
                 vm.rawdata = [];
                 for (var i = 0; i < vm.widget.series.length; i++) {
-                    vm.rawdata[i] = OHService.getTimeSeries(vm.widget.service, vm.widget.series[i].item, startDate.getTime(), endDate);
+                    vm.rawdata[i] = OHService.getTimeSeries(vm.widget.service, vm.widget.series[i].item, startDate.getTime(), endDate, {
+                        consolidation: consolidationFor(vm.widget.series[i]),
+                        buckets: buckets
+                    });
                     //vm.rawdata[i] = $http.get('/rest/persistence/items/' + vm.widget.series[i].item + "?starttime=" + startDate.toISOString() + (vm.widget.service ? '&serviceId=' + vm.widget.service : ''));
                 }
 
                 $q.all(vm.rawdata).then(function (values) {
                     vm.datasets = {};
+                    vm.notices = [];
                     for (var i = 0; i < values.length; i++) {
                         var seriesname = values[i].data.name;
                         var finaldata = values[i].data.data;
+
+                        if (values[i].data.error) {
+                            vm.notices.push(seriesname + ': ' + values[i].data.error);
+                        } else if (values[i].data.capped) {
+                            // Never switch representation on a signal that cannot be trusted -
+                            // say so instead, the user can pick a consolidation per series.
+                            vm.notices.push(seriesname + ': too many values, chart may be incomplete');
+                        }
 
                         angular.forEach(finaldata, function (datapoint) {
                             datapoint.state = datapoint.state.toString().replace("ON",1);
@@ -323,7 +366,7 @@
         };
 
         $scope.addSeries = function () {
-            $scope.form.series.push({ axis: 'y', display_line: true, display_area: true });
+            $scope.form.series.push({ axis: 'y', display_line: true, display_area: true, consolidation: 'raw' });
             $scope.accordions[$scope.form.series.length - 1] = true;
         };
 
