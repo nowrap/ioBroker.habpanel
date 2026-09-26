@@ -97,15 +97,26 @@ Dashboard als JSON einfügen; alternativ die Werte von Hand in die Widgets eintr
 }
 ```
 
-So sieht das aus — 60 Spalten, Bearbeitungsmodus, alle Werte erfunden:
+So sieht das fertig aus — Ansichtsmodus, **60 Spalten**, alle Werte erfunden:
 
-![Drei Bloecke a 20 Spalten, darunter eine Kachelzeile von einer Zeile Hoehe](bilder/raster-60-spalten.jpg)
+![Drei Bloecke in Chartgroesse, darunter eine Kachelzeile von zwei Zeilen Hoehe mit farbigen Balken](bilder/beispiel-ansicht.jpg)
 
-Die untere Reihe ist **eine Zeile hoch (26 px)**, die obere vier (119 px). Bei
-12 Spalten waere allein die untere Reihe rund 160 px hoch gewesen und die Aufteilung
-7 + 8 + 5 gar nicht moeglich.
+Die obere Reihe ist 6 Zeilen hoch, die Kachelzeile darunter **2** — zusammen 181 und
+57 Pixel. Bei 12 Spalten waere allein die Kachelzeile rund 420 px hoch gewesen, und die
+Aufteilung in sechs gleich breite Kacheln haette gar nicht ins Raster gepasst.
 
-Worauf es dabei ankommt:
+Derselbe Stand im Bearbeitungsmodus:
+
+![Dasselbe Dashboard im Bearbeitungsmodus, Kacheln mit Kopfzeile und Menuepunkt](bilder/beispiel-bearbeiten.jpg)
+
+Zwei Unterschiede fallen auf, und beide sind normal:
+
+- **Die Werte fehlen.** Im Bearbeitungsmodus zeigt HABPanel nur die Beschriftung.
+- **Jede Kachel bekommt eine Kopfzeile** mit dem Verschiebegriff links und dem
+  Menuepunkt rechts. Die Kopfzeile liegt *ueber* dem Inhalt, nicht daneben — sie
+  verbraucht keine Rasterzeile.
+
+Worauf es dabei ankommt:Worauf es dabei ankommt:
 
 - **Die Kachelzeile füllt die Chartbreite randlos.** 7 + 8 = 15, genau die Breite des
   Charts darüber. Bleibt ein Rest, sieht die Seite gerüttelt aus.
