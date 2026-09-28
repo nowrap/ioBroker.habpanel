@@ -18,7 +18,13 @@
         pushing: false,
         floating: false,
         mobileModeEnabled: (vm.dashboard.mobile_mode_enabled || false),
-        mobileBreakpoint: (vm.dashboard.mobile_mode_enabled && vm.dashboard.mobile_breakpoint || undefined),
+        // angular-gridster spells it mobileBreakPoint, with a capital P. With the
+        // lowercase spelling the option never arrived and gridster silently used
+        // its own default of 600 px, so the per-dashboard "Mobile breakpoint"
+        // field had no effect at all. Not visible on a phone - 360 to 430 px are
+        // below 600 either way - but a tablet at 700 to 800 px kept the desktop
+        // grid however the field was set.
+        mobileBreakPoint: (vm.dashboard.mobile_mode_enabled && vm.dashboard.mobile_breakpoint || undefined),
         draggable: { enabled: false },
         resizable: { enabled: false }
     };
