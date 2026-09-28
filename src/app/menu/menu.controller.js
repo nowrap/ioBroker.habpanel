@@ -36,7 +36,16 @@
             rowHeight: 110,
             swapping: true,
             //floating: false,
-            mobileModeEnabled: false,
+            // Die Uebersicht stapelte nie, egal wie schmal der Bildschirm war.
+            // Auf einem Telefon blieben damit menucolumns Spalten stehen - bei
+            // sechs Spalten rund 70 px je Karte, waehrend .dash-card mit
+            // overflow:hidden den Namen abschneidet. Aus "Kellerlueftung" wurde
+            // "Kell". Die Dashboards stapeln laengst, nur ihr eigenes Menue nicht.
+            //
+            // Die Schwelle ist bewusst klein gehalten: bei mehr als zwei Spalten
+            // lohnt das Stapeln erst, wenn die Karten wirklich schmal werden.
+            mobileModeEnabled: true,
+            mobileBreakPoint: 600,
             draggable: { enabled: true, handle: '.handle', stop: function(evt) { PersistenceService.saveDashboards() } },
             resizable: { enabled: false, stop: function(evt) { PersistenceService.saveDashboards() } }
         };

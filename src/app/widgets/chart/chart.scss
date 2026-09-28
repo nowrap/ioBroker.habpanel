@@ -22,3 +22,50 @@
 .chart .axis {
     font-size: 0.72em;
 }
+
+// n3-charts haengt die Legende konstruktionsbedingt UNTER die Zeichenflaeche
+// (position:absolute, bottom: minus eigene Hoehe). Die Kachel muss ihr deshalb
+// Platz lassen, sonst ragt sie in das Widget darunter.
+//
+// Diese Hoehe stand frueher als style="height: calc(100% - 2em)" in der Vorlage.
+// Inline war sie mit keiner Regel mehr zu ueberschreiben - genau das wird unten
+// gebraucht -, darum steht sie jetzt hier.
+.chart-content.chart-interactive {
+    height: calc(100% - 2em);
+}
+
+// Diese 2em reichen fuer EINE Legendenzeile. Auf schmalen Bildschirmen bricht
+// sie ab etwa drei Kurven mit langen Namen um und wird doppelt so hoch; gemessen
+// am 28.09.2026 bei 341 px Kachelbreite braucht "Speicher, WW-Bereitung,
+// Zirkulationspumpe" 282 px und ragt danach 30 px statt 10 px aus der Kachel.
+//
+// Dahinter steckt ein zweiter, aelterer Fehler, und beide haben dieselbe
+// Wurzel: im Mobilmodus stapelt gridster mit AUTOMATISCHER Kachelhoehe. Damit
+// hat die Kachel keine feste Hoehe, ein Prozentmass darin kein Bezugsmass, und
+// der Chart misst bei jedem Neuzeichnen einen Behaelter, den er selbst gerade
+// vergroessert hat. Am 28.09.2026 nachgemessen: die Kacheln wuchsen bei jeder
+// Neuzeichnung um 10 px, ohne je aufzuhoeren - 197, 212, 222, 232, 242.
+//
+// Zwei naheliegende Wege helfen deshalb nicht:
+//   - Mehr Reserve allein verschiebt Zeichenflaeche und Legende gemeinsam;
+//     der Ueberstand bleibt exakt gleich (30 px vorher, 30 px nachher).
+//   - Die Legende in den Fluss nehmen beseitigt zwar den Ueberstand, verstaerkt
+//     aber das Wachstum von 10 auf 50 px je Durchgang, weil sie dann selbst zur
+//     Hoehe beitraegt, die den naechsten Durchgang treibt.
+//
+// Was beides loest, ist eine DEFINIERTE Hoehe. Damit misst der Chart jedes Mal
+// dasselbe, das Wachstum hoert auf, und die Reserve bekommt endlich ein
+// Bezugsmass. Gemessen ueber sechs Neuzeichnungen: Hoehe konstant, Legende
+// 21 bis 41 px innerhalb der Kachel.
+//
+// Die 300 px sind der einzige Wert zum Drehen: hoeher heisst lesbarer, aber
+// mehr Rollen bei einem Dutzend Charts je Seite.
+@media (max-width: 900px) {
+    .box-content.chart {
+        height: 300px;
+    }
+
+    .chart-content.chart-interactive {
+        height: calc(100% - 4em);
+    }
+}
